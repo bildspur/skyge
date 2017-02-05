@@ -1,5 +1,6 @@
 package ch.bildspur.skyge
 
+import org.opencv.core.Core
 import org.opencv.core.Mat
 import org.opencv.imgproc.Imgproc
 import processing.core.PGraphics
@@ -8,6 +9,7 @@ import java.awt.image.BufferedImage
 import java.awt.image.DataBufferInt
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
+import java.util.*
 
 
 /**
@@ -60,4 +62,20 @@ fun Mat.toARGBPixels(): IntArray {
     this.get(0, 0, matPixels)
     ByteBuffer.wrap(matPixels).order(ByteOrder.LITTLE_ENDIAN).asIntBuffer().get(intPixels)
     return intPixels
+}
+
+fun Mat.toBGRA(bgra: Mat) {
+    val channels = ArrayList<Mat>()
+    Core.split(this, channels)
+
+    val reordered = ArrayList<Mat>()
+    // Starts as ARGB.
+    // Make into BGRA.
+
+    reordered.add(channels[3])
+    reordered.add(channels[2])
+    reordered.add(channels[1])
+    reordered.add(channels[0])
+
+    Core.merge(reordered, bgra)
 }
