@@ -85,6 +85,7 @@ class Sketch : PApplet() {
             // draw cross for component
             it.strokeWeight(3f)
             it.stroke(0f, 0f, 255f)
+            it.fill(0f, 0f, 255f)
 
             for (component in ti.components) {
                 val x = component.centroid.x.toFloat()
@@ -94,6 +95,8 @@ class Sketch : PApplet() {
 
                 it.line(x, y - size, x, y + size)
                 it.line(x - size, y, x + size, y)
+                
+                it.text("${component.label}", x + (size / 2f), y + size)
             }
         }
 
