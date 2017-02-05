@@ -20,7 +20,6 @@ class ThermalAnalyser {
         thread {
             while (isRunning) {
                 val image = input.take()
-
                 ThermalDetector.detect(image)
                 output.offer(image)
             }
