@@ -14,6 +14,8 @@ import processing.core.PConstants
  */
 object ThermalDetector {
 
+    val imageOutput = true
+
     val threshold = 200.0
     val elementSize = 1
     val minAreaSize = 500
@@ -24,8 +26,6 @@ object ThermalDetector {
 
     fun detect(ti: ThermalImage) {
         val image = Mat(ti.input.height, ti.input.width, CvType.CV_8UC4)
-        val output = Sketch.instance.createImage(ti.input.width, ti.input.height, PConstants.ARGB)
-        val overlay = Sketch.instance.createImage(ti.input.width, ti.input.height, PConstants.ARGB)
 
         ti.input.toMat(image)
         val gray = image.copy()
@@ -43,6 +43,17 @@ object ThermalDetector {
         // detect areas (connected-component analysis)
         val components = gray.connectedComponentsWithStats()
 
+
+        if (imageOutput)
+            createOutput(ti, image, gray, components)
+
+        // free memory
+        gray.release()
+        image.release()
+        components.release()
+    }
+
+    private fun createOutput(ti: ThermalImage, image: Mat, gray: Mat, components: ConnectedComponentsResult) {
         // create mask to draw filtered components
         val mask = gray.zeros()
 
@@ -58,10 +69,14 @@ object ThermalDetector {
             labeledMask.release()
         }
 
+        val output = Sketch.instance.createImage(ti.input.width, ti.input.height, PConstants.ARGB)
+        val overlay = Sketch.instance.createImage(ti.input.width, ti.input.height, PConstants.ARGB)
+        ti.createOutputImage()
+
         image.toPImage(output)
         mask.toPImage(overlay)
 
-        ti.output.draw {
+        ti.output!!.draw {
             it.blendMode(PApplet.BLEND)
             it.image(output, 0f, 0f)
 
@@ -92,11 +107,5 @@ object ThermalDetector {
             it.removeCache(output)
             it.removeCache(overlay)
         }
-
-        // free memory
-        gray.release()
-        image.release()
-        components.release()
-        mask.release()
     }
 }

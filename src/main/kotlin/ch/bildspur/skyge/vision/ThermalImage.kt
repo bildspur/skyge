@@ -10,10 +10,13 @@ import processing.core.PImage
  */
 class ThermalImage {
     val input: PImage
-    val output: PGraphics
+    var output: PGraphics? = null
 
     constructor(input: PImage) {
         this.input = input
+    }
+
+    fun createOutputImage() {
         output = Sketch.instance.createGraphics(input.width, input.height, PConstants.JAVA2D)
     }
 }

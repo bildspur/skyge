@@ -21,4 +21,8 @@ data class ConnectedComponentsResult(val labeled: Mat, val rectComponents: Mat, 
         centComponents.row(componentId).get(0, 0, centroidInfo)
         return Point(centroidInfo[0], centroidInfo[1])
     }
+
+    fun getConnectedComponents(): List<ConnectedComponent> {
+        return (0..length - 1).map { ConnectedComponent(it, rectComponents.row(it), centComponents.row(it)) }
+    }
 }
