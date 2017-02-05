@@ -1,7 +1,6 @@
 package ch.bildspur.skyge
 
 import ch.bildspur.skyge.controller.SyphonController
-import ch.bildspur.skyge.vision.ThermalAnalyser
 import ch.bildspur.skyge.vision.ThermalDetector
 import ch.bildspur.skyge.vision.ThermalImage
 import org.opencv.core.Core
@@ -36,9 +35,9 @@ class Sketch : PApplet() {
 
     var output: PGraphics by Delegates.notNull()
 
-    var exampleMovie: Movie by Delegates.notNull()
+    var video: PGraphics by Delegates.notNull()
 
-    val analyser = ThermalAnalyser()
+    var exampleMovie: Movie by Delegates.notNull()
 
     init {
 
@@ -60,17 +59,13 @@ class Sketch : PApplet() {
         surface.setTitle(NAME)
         syphon.setupSyphon(NAME)
 
-        // setup output
-        output = createGraphics(OUTPUT_WIDTH, OUTPUT_HEIGHT, PApplet.P2D)
-
         // load example
         exampleMovie = Movie(this, sketchPath("data/flir_footage.mp4"))
         exampleMovie.loop()
 
-        // set settings
-        ThermalDetector.imageOutput = false
-
-        analyser.start()
+        // setup output
+        output = createGraphics(OUTPUT_WIDTH, OUTPUT_HEIGHT, PApplet.P2D)
+        video = createGraphics(854, 480, PApplet.P2D)
     }
 
     override fun draw() {
@@ -79,27 +74,46 @@ class Sketch : PApplet() {
         if (frameCount < 2)
             return
 
-        syphon.sendImageToSyphon(output)
-
-        // draw original image
-        image(exampleMovie, width - 425f, 0f, 425f, 240f)
-
-        // draw processed image
+        // analyse image
         val ti = ThermalImage(exampleMovie)
         ThermalDetector.detect(ti)
 
-        if (ti.output != null) {
-            image(ti.output, width - 425f, 250f, 425f, 240f)
-            g.removeCache(ti.output)
+        // draw debug image
+        video.draw {
+            it.image(exampleMovie.copy(), 0f, 0f)
+
+            // draw cross for component
+            it.strokeWeight(3f)
+            it.stroke(0f, 0f, 255f)
+
+            for (component in ti.components) {
+                val x = component.centroid.x.toFloat()
+                val y = component.centroid.y.toFloat()
+
+                val size = 15f
+
+                it.line(x, y - size, x, y + size)
+                it.line(x - size, y, x + size, y)
+            }
         }
 
-        g.removeCache(ti.input)
+        image(video, 0f, 0f, 640f, 380f)
+
+        // draw output
+        output.draw { it.background(255) }
+
+        // send output
+        syphon.sendImageToSyphon(output)
 
         drawFPS()
+
+        // cleanup
+        g.removeCache(ti.input)
     }
 
     fun movieEvent(m: Movie) {
-        m.read()
+        if (m.available())
+            m.read()
     }
 
     fun drawFPS() {
