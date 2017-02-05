@@ -68,6 +68,26 @@ object ThermalDetector {
             it.blendMode(PApplet.BLEND)
             it.image(overlay, 0f, 0f)
 
+            it.strokeWeight(2f)
+            it.stroke(255f, 0f, 0f)
+
+            // draw cross on regions
+            for (label in 1..components.length - 1) {
+                val areaSize = components.rectComponents[label, Imgproc.CC_STAT_AREA][0]
+
+                if (areaSize >= minAreaSize) {
+                    val centroid = components.getCentroid(label)
+
+                    val x = centroid.x.toFloat()
+                    val y = centroid.y.toFloat()
+
+                    val size = 15f
+
+                    it.line(x, y - size, x, y + size)
+                    it.line(x - size, y, x + size, y)
+                }
+            }
+
             // free memory
             it.removeCache(output)
             it.removeCache(overlay)
