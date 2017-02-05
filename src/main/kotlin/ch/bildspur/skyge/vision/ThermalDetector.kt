@@ -10,9 +10,9 @@ import org.opencv.core.Mat
  */
 object ThermalDetector {
 
-    val threshold = 200.0
-    val elementSize = 1
-    val minAreaSize = 500
+    var threshold = 200.0
+    var elementSize = 1
+    var minAreaSize = 500
 
     init {
 
