@@ -4,7 +4,6 @@ import ch.bildspur.skyge.*
 import org.opencv.core.Core
 import org.opencv.core.CvType
 import org.opencv.core.Mat
-import org.opencv.imgproc.Imgproc
 import processing.core.PApplet
 import processing.core.PConstants
 
@@ -41,30 +40,28 @@ object ThermalDetector {
         gray.dilate(elementSize)
 
         // detect areas (connected-component analysis)
-        val components = gray.connectedComponentsWithStats()
-
+        val nativeComponents = gray.connectedComponentsWithStats()
+        val components = nativeComponents.getConnectedComponents().filter { it.area >= minAreaSize && it.label != 0 }
 
         if (imageOutput)
-            createOutput(ti, image, gray, components)
+            createOutput(ti, image, gray, nativeComponents.labeled, components)
 
         // free memory
         gray.release()
         image.release()
-        components.release()
+        nativeComponents.release()
     }
 
-    private fun createOutput(ti: ThermalImage, image: Mat, gray: Mat, components: ConnectedComponentsResult) {
+    private fun createOutput(ti: ThermalImage, image: Mat, gray: Mat, labeled: Mat, components: List<ConnectedComponent>) {
         // create mask to draw filtered components
         val mask = gray.zeros()
 
         // create blob map
-        componentCleanup@ for (label in 1..components.length - 1) {
-            val areaSize = components.rectComponents[label, Imgproc.CC_STAT_AREA][0]
-
-            if (areaSize < minAreaSize)
+        componentCleanup@ for (component in components) {
+            if (component.area < minAreaSize)
                 continue@componentCleanup
 
-            val labeledMask = components.labeled.getRegionMask(label)
+            val labeledMask = labeled.getRegionMask(component.label)
             Core.add(mask, labeledMask, mask)
             labeledMask.release()
         }
@@ -87,20 +84,14 @@ object ThermalDetector {
             it.stroke(255f, 0f, 0f)
 
             // draw cross on regions
-            for (label in 1..components.length - 1) {
-                val areaSize = components.rectComponents[label, Imgproc.CC_STAT_AREA][0]
+            for (component in components) {
+                val x = component.centroid.x.toFloat()
+                val y = component.centroid.y.toFloat()
 
-                if (areaSize >= minAreaSize) {
-                    val centroid = components.getCentroid(label)
+                val size = 15f
 
-                    val x = centroid.x.toFloat()
-                    val y = centroid.y.toFloat()
-
-                    val size = 15f
-
-                    it.line(x, y - size, x, y + size)
-                    it.line(x - size, y, x + size, y)
-                }
+                it.line(x, y - size, x, y + size)
+                it.line(x - size, y, x + size, y)
             }
 
             // free memory

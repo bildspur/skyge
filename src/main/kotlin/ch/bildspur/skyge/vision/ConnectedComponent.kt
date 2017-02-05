@@ -26,7 +26,8 @@ class ConnectedComponent {
         size = Size(rectRow.get(0, Imgproc.CC_STAT_WIDTH)[0], rectRow.get(0, Imgproc.CC_STAT_HEIGHT)[0])
 
         // create centroid
-        val centroidData = centroidRow.get(0, 0)
+        val centroidData = DoubleArray(2)
+        centroidRow.get(0, 0, centroidData)
         centroid = Point(centroidData[0], centroidData[1])
     }
 }
