@@ -13,7 +13,7 @@ import processing.core.PConstants
  */
 object ThermalDetector {
 
-    val imageOutput = true
+    var imageOutput = false
 
     val threshold = 200.0
     val elementSize = 1

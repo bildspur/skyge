@@ -2,6 +2,7 @@ package ch.bildspur.skyge
 
 import ch.bildspur.skyge.controller.SyphonController
 import ch.bildspur.skyge.vision.ThermalAnalyser
+import ch.bildspur.skyge.vision.ThermalDetector
 import ch.bildspur.skyge.vision.ThermalImage
 import org.opencv.core.Core
 import processing.core.PApplet
@@ -66,6 +67,9 @@ class Sketch : PApplet() {
         exampleMovie = Movie(this, sketchPath("data/flir_footage.mp4"))
         exampleMovie.loop()
 
+        // set settings
+        ThermalDetector.imageOutput = false
+
         analyser.start()
     }
 
@@ -78,18 +82,18 @@ class Sketch : PApplet() {
         syphon.sendImageToSyphon(output)
 
         // draw original image
-        image(exampleMovie.copy(), width - 425f, 0f, 425f, 240f)
+        image(exampleMovie, width - 425f, 0f, 425f, 240f)
 
         // draw processed image
-        analyser.input.put(ThermalImage(exampleMovie))
+        val ti = ThermalImage(exampleMovie)
+        ThermalDetector.detect(ti)
 
-        if (analyser.output.size > 0) {
-            val ti = analyser.output.poll()
+        if (ti.output != null) {
             image(ti.output, width - 425f, 250f, 425f, 240f)
-
-            g.removeCache(ti.input)
             g.removeCache(ti.output)
         }
+
+        g.removeCache(ti.input)
 
         drawFPS()
     }

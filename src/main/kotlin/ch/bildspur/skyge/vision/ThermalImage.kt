@@ -12,6 +12,8 @@ class ThermalImage {
     val input: PImage
     var output: PGraphics? = null
 
+    val components = mutableListOf<ConnectedComponent>()
+
     constructor(input: PImage) {
         this.input = input
     }
