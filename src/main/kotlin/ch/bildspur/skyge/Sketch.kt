@@ -22,7 +22,7 @@ class Sketch : PApplet() {
         @JvmStatic val OUTPUT_HEIGHT = 250
 
         @JvmStatic val WINDOW_WIDTH = 640
-        @JvmStatic val WINDOW_HEIGHT = 480
+        @JvmStatic val WINDOW_HEIGHT = 500
 
         @JvmStatic val NAME = "SKYGE"
 
@@ -78,15 +78,17 @@ class Sketch : PApplet() {
         syphon.sendImageToSyphon(output)
 
         // draw original image
-        image(exampleMovie.copy(), 0f, 0f, 425f, 240f)
-
+        image(exampleMovie.copy(), width - 425f, 0f, 425f, 240f)
 
         // draw processed image
         analyser.input.put(ThermalImage(exampleMovie))
 
         if (analyser.output.size > 0) {
             val ti = analyser.output.poll()
-            image(ti.output, 0f, 250f, 425f, 240f)
+            image(ti.output, width - 425f, 250f, 425f, 240f)
+
+            g.removeCache(ti.input)
+            g.removeCache(ti.output)
         }
 
         drawFPS()
