@@ -174,11 +174,13 @@ fun Mat.gray() {
 fun Mat.erode(erosionSize: Int) {
     val element = Imgproc.getStructuringElement(Imgproc.MORPH_RECT, Size(2.0 * erosionSize + 1.0, 2.0 * erosionSize + 1.0))
     Imgproc.erode(this, this, element)
+    element.release()
 }
 
 fun Mat.dilate(dilationSize: Int) {
     val element = Imgproc.getStructuringElement(Imgproc.MORPH_RECT, Size(2.0 * dilationSize + 1.0, 2.0 * dilationSize + 1.0))
     Imgproc.dilate(this, this, element)
+    element.release()
 }
 
 fun Mat.threshold(thresh: Double, maxval: Double = 255.0, type: Int = Imgproc.THRESH_BINARY) {
@@ -200,15 +202,8 @@ fun Mat.connectedComponentsWithStats(connectivity: Int = 8, ltype: Int = CvType.
     return ConnectedComponentsResult(labeled, rectComponents, centComponents)
 }
 
-fun Mat.filter(f: (e: Double) -> Boolean, nvalue: Double = 255.0): Mat {
-    // very slow filter function
-
-    val output = this.zeros(CvType.CV_8U)
-
-    for (y in 0..this.size().height.toInt() - 1)
-        for (x in 0..this.size().width.toInt() - 1)
-            if (f(this[y, x][0]))
-                output[y, x][0] = nvalue
-
-    return output
+fun Mat.getRegionMask(regionLabel: Int): Mat {
+    val labeledMask = this.zeros(CvType.CV_8U)
+    Core.inRange(this, Scalar(regionLabel.toDouble()), Scalar(regionLabel.toDouble()), labeledMask)
+    return labeledMask
 }

@@ -1,6 +1,7 @@
 package ch.bildspur.skyge.vision
 
 import ch.bildspur.skyge.*
+import org.opencv.core.Core
 import org.opencv.core.CvType
 import org.opencv.core.Mat
 import org.opencv.imgproc.Imgproc
@@ -14,8 +15,8 @@ import processing.core.PConstants
 object ThermalDetector {
 
     val threshold = 200.0
-    val elementSize = 2
-    val minAreaSize = 300
+    val elementSize = 1
+    val minAreaSize = 500
 
     init {
 
@@ -52,6 +53,9 @@ object ThermalDetector {
             if (areaSize < minAreaSize)
                 continue@componentCleanup
 
+            val labeledMask = components.labeled.getRegionMask(label)
+            Core.add(mask, labeledMask, mask)
+            labeledMask.release()
         }
 
         image.toPImage(output)
