@@ -3,8 +3,10 @@ package ch.bildspur.skyge
 import ch.bildspur.skyge.controller.SyphonController
 import ch.bildspur.skyge.vision.ThermalDetector
 import ch.bildspur.skyge.vision.ThermalImage
+import ch.fhnw.afpars.util.opencv.sparsePoints
 import controlP5.ControlP5
 import org.opencv.core.Core
+import org.opencv.core.Point
 import processing.core.PApplet
 import processing.core.PConstants
 import processing.core.PGraphics
@@ -41,6 +43,8 @@ class Sketch : PApplet() {
     var exampleMovie: Movie by Delegates.notNull()
 
     var cp5: ControlP5 by Delegates.notNull()
+
+    var sparsing = 0.0
 
     init {
 
@@ -93,16 +97,27 @@ class Sketch : PApplet() {
             it.stroke(0f, 0f, 255f)
             it.fill(0f, 0f, 255f)
 
-            for (component in ti.components) {
-                val x = component.centroid.x.toFloat()
-                val y = component.centroid.y.toFloat()
+            for (points in ti.components.map { it.centroid }.toMutableList().sparsePoints(sparsing)) {
+                val center = Point(points.map { it.x }.average(), points.map { it.y }.average())
 
-                val size = 15f
+                for (p in points) {
+                    it.strokeWeight(2f)
+                    it.stroke(0f, 0f, 255f)
 
-                it.line(x, y - size, x, y + size)
-                it.line(x - size, y, x + size, y)
+                    it.cross(p.x.toFloat(), p.y.toFloat(), 15f)
 
-                it.text("${component.label}", x + (size / 2f), y + size)
+                    it.strokeWeight(2f)
+                    it.stroke(0f)
+
+                    // draw line to center
+                    it.line(p.x.toFloat(), p.y.toFloat(), center.x.toFloat(), center.y.toFloat())
+                }
+
+                // draw center
+                it.strokeWeight(3f)
+                it.stroke(255f, 0f, 0f)
+
+                it.cross(center.x.toFloat(), center.y.toFloat(), 15f)
             }
         }
 
@@ -165,6 +180,15 @@ class Sketch : PApplet() {
                 .setRange(0f, 5000f)
                 .onChange { e ->
                     ThermalDetector.minAreaSize = e.controller.value.toInt()
+                }
+
+        cp5.addSlider("sparsing")
+                .setPosition(w, h + 25)
+                .setSize(120, 20)
+                .setValue(sparsing.toFloat())
+                .setRange(0f, width.toFloat())
+                .onChange { e ->
+                    sparsing = e.controller.value.toDouble()
                 }
     }
 }

@@ -30,6 +30,11 @@ fun PGraphics.draw(block: (g: PGraphics) -> Unit) {
     this.endDraw()
 }
 
+fun PGraphics.cross(x: Float, y: Float, size: Float) {
+    this.line(x, y - size, x, y + size)
+    this.line(x - size, y, x + size, y)
+}
+
 fun PImage.toMat(m: Mat) {
     val matPixels = ((this.native as BufferedImage).raster.dataBuffer as DataBufferInt).data
 
