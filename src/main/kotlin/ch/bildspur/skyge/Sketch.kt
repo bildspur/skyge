@@ -11,6 +11,7 @@ import processing.core.PApplet
 import processing.core.PConstants
 import processing.core.PGraphics
 import processing.opengl.PJOGL
+import processing.video.Capture
 import processing.video.Movie
 import kotlin.properties.Delegates
 
@@ -38,13 +39,13 @@ class Sketch : PApplet() {
 
     var output: PGraphics by Delegates.notNull()
 
-    var video: PGraphics by Delegates.notNull()
-
-    var exampleMovie: Movie by Delegates.notNull()
+    var preview: PGraphics by Delegates.notNull()
 
     var cp5: ControlP5 by Delegates.notNull()
 
     var sparsing = 0.0
+
+    var camera: Capture? = null
 
     init {
 
@@ -69,28 +70,43 @@ class Sketch : PApplet() {
         cp5 = ControlP5(this)
         setupUI()
 
-        // load example
-        exampleMovie = Movie(this, sketchPath("data/flir_footage.mp4"))
-        exampleMovie.loop()
-
         // setup output
         output = createGraphics(OUTPUT_WIDTH, OUTPUT_HEIGHT, PApplet.P2D)
-        video = createGraphics(854, 480, PApplet.P2D)
+        preview = createGraphics(320, 240, PApplet.P2D)
     }
 
     override fun draw() {
         background(55f)
 
-        if (frameCount < 2)
+        if (frameCount < 2) {
+            text("loading camera...", width / 2 - 50f, height / 2f - 50f)
+            return
+        }
+
+        // setup camera lazy
+        if (camera == null) {
+            // setup camera
+            camera = Capture(this)
+            camera!!.start()
+        }
+
+        // read webcam image
+        if (camera!!.available())
+            camera!!.read()
+
+        // skip dead frames
+        if (camera!!.width == 0)
             return
 
+        val sourceImage = camera!!
+
         // analyse image
-        val ti = ThermalImage(exampleMovie)
+        val ti = ThermalImage(sourceImage)
         ThermalDetector.detect(ti)
 
         // draw debug image
-        video.draw {
-            it.image(exampleMovie.copy(), 0f, 0f)
+        preview.draw {
+            it.image(sourceImage.copy(), 0f, 0f)
 
             // draw cross for component
             it.strokeWeight(3f)
@@ -121,7 +137,8 @@ class Sketch : PApplet() {
             }
         }
 
-        image(video, 0f, 0f, 640f, 380f)
+        // paint preview
+        image(preview, 0f, 0f, 640f, 380f)
 
         // draw output
         output.draw { it.background(255) }
@@ -134,11 +151,6 @@ class Sketch : PApplet() {
 
         // cleanup
         g.removeCache(ti.input)
-    }
-
-    fun movieEvent(m: Movie) {
-        if (m.available())
-            m.read()
     }
 
     fun drawFPS() {
@@ -190,5 +202,14 @@ class Sketch : PApplet() {
                 .onChange { e ->
                     sparsing = e.controller.value.toDouble()
                 }
+    }
+
+    fun captureEvent(c: Capture) {
+        c.read()
+    }
+
+    fun movieEvent(m: Movie) {
+        if (m.available())
+            m.read()
     }
 }
