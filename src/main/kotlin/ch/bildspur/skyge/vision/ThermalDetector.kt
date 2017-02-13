@@ -11,8 +11,8 @@ import org.opencv.core.Mat
 object ThermalDetector {
 
     var threshold = 200.0
-    var elementSize = 1
-    var minAreaSize = 500
+    var elementSize = 5
+    var minAreaSize = 875
 
     init {
 
@@ -34,7 +34,7 @@ object ThermalDetector {
         gray.erode(elementSize)
         gray.dilate(elementSize)
 
-        // detect areas (connected-component analysis)
+        // detect areas (used-component analysis)
         val nativeComponents = gray.connectedComponentsWithStats()
         val components = nativeComponents.getConnectedComponents().filter { it.area >= minAreaSize && it.label != 0 }
 

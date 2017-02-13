@@ -1,6 +1,7 @@
 package ch.bildspur.skyge
 
 import ch.bildspur.skyge.controller.SyphonController
+import ch.bildspur.skyge.tracker.ActiveRegionTracker
 import ch.bildspur.skyge.vision.ThermalDetector
 import ch.bildspur.skyge.vision.ThermalImage
 import ch.fhnw.afpars.util.opencv.sparsePoints
@@ -46,6 +47,8 @@ class Sketch : PApplet() {
     var sparsing = 0.0
 
     var camera: Capture? = null
+
+    var tracker = ActiveRegionTracker()
 
     init {
 
@@ -95,8 +98,10 @@ class Sketch : PApplet() {
             camera!!.read()
 
         // skip dead frames
-        if (camera!!.width == 0)
+        if (camera!!.width == 0) {
+            text("waiting for frame...", width / 2 - 75f, height / 2f - 50f)
             return
+        }
 
         val sourceImage = camera!!
 
@@ -104,12 +109,15 @@ class Sketch : PApplet() {
         val ti = ThermalImage(sourceImage)
         ThermalDetector.detect(ti)
 
+        // track image
+        tracker.track(ti.components)
+
         // draw debug image
         preview.draw {
             it.image(sourceImage.copy(), 0f, 0f)
 
             // draw cross for component
-            it.strokeWeight(3f)
+            it.strokeWeight(1f)
             it.stroke(0f, 0f, 255f)
             it.fill(0f, 0f, 255f)
 
@@ -117,12 +125,12 @@ class Sketch : PApplet() {
                 val center = Point(points.map { it.x }.average(), points.map { it.y }.average())
 
                 for (p in points) {
-                    it.strokeWeight(2f)
+                    it.strokeWeight(1f)
                     it.stroke(0f, 0f, 255f)
 
-                    it.cross(p.x.toFloat(), p.y.toFloat(), 15f)
+                    it.cross(p.x.toFloat(), p.y.toFloat(), 5f)
 
-                    it.strokeWeight(2f)
+                    it.strokeWeight(1f)
                     it.stroke(0f)
 
                     // draw line to center
@@ -130,15 +138,30 @@ class Sketch : PApplet() {
                 }
 
                 // draw center
-                it.strokeWeight(3f)
+                it.strokeWeight(1f)
                 it.stroke(255f, 0f, 0f)
 
-                it.cross(center.x.toFloat(), center.y.toFloat(), 15f)
+                it.cross(center.x.toFloat(), center.y.toFloat(), 5f)
+            }
+
+            // draw regions
+            val rectSize = 10.0f
+            tracker.regions.forEachIndexed { i, activeRegion ->
+                it.strokeWeight(1f)
+                it.stroke(0f, 255f, 0f)
+                it.noFill()
+                it.rect(activeRegion.center.x.toFloat() - (rectSize / 2f),
+                        activeRegion.center.y.toFloat() - (rectSize / 2f),
+                        rectSize,
+                        rectSize)
+
+                it.fill(0f)
+                it.text("${activeRegion.lifeTime}", activeRegion.center.x.toFloat(), activeRegion.center.y.toFloat())
             }
         }
 
         // paint preview
-        image(preview, 0f, 0f, 640f, 380f)
+        image(preview, 160f, 0f)
 
         // draw output
         output.draw { it.background(255) }
@@ -201,6 +224,7 @@ class Sketch : PApplet() {
                 .setRange(0f, width.toFloat())
                 .onChange { e ->
                     sparsing = e.controller.value.toDouble()
+                    tracker.sparsing = sparsing
                 }
     }
 
