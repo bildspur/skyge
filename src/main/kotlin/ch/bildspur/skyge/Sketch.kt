@@ -1,9 +1,12 @@
 package ch.bildspur.skyge
 
+import ch.bildspur.skyge.animation.Animation
+import ch.bildspur.skyge.animation.Animator
 import ch.bildspur.skyge.controller.SyphonController
 import ch.bildspur.skyge.tracker.ActiveRegionTracker
 import ch.bildspur.skyge.vision.ThermalDetector
 import ch.bildspur.skyge.vision.ThermalImage
+import ch.fhnw.afpars.util.opencv.map
 import ch.fhnw.afpars.util.opencv.sparsePoints
 import controlP5.ControlP5
 import org.opencv.core.Core
@@ -32,6 +35,10 @@ class Sketch : PApplet() {
         @JvmStatic val NAME = "SKYGE"
 
         @JvmStatic var instance = PApplet()
+
+        @JvmStatic fun map(value: Double, start1: Double, stop1: Double, start2: Double, stop2: Double): Double {
+            return start2 + (stop2 - start2) * ((value - start1) / (stop1 - start1))
+        }
     }
 
     val syphon = SyphonController(this)
@@ -160,14 +167,38 @@ class Sketch : PApplet() {
             }
         }
 
-        // paint preview
-        image(preview, 160f, 0f)
+        // create animations
+        tracker.regions.forEach {
+            if (it.lifeTime % 100 == 0) {
+                Animator.animations.add(Animation(20, { a, g ->
+                    g.strokeWeight(10f)
+                    g.stroke(255f)
+                    g.noFill()
+
+                    val p = it.center.map(camera!!.width.toDouble(),
+                            camera!!.height.toDouble(),
+                            output.width.toDouble(),
+                            output.height.toDouble())
+
+                    g.ellipse(p.x.toFloat(), p.y.toFloat(), 2f * a.lifeTime, 2f * a.lifeTime)
+                }))
+            }
+        }
 
         // draw output
-        output.draw { it.background(255) }
+        Animator.update(output)
 
         // send output
         syphon.sendImageToSyphon(output)
+
+        // paint preview
+        image(preview, 10f, 10f)
+        image(output, width - 30f - 250f, 10f + 57.5f, 250f, 125f)
+
+        // draw text
+        fill(255f)
+        text("Input", 10f, 270f)
+        text("Output", width - 20f - 250f, 270f)
 
         cp5.draw()
         drawFPS()
