@@ -169,7 +169,7 @@ class Sketch : PApplet() {
 
         // create animations
         tracker.regions.forEach {
-            if (it.lifeTime % 100 == 0) {
+            if (it.lifeTime % 100 == 0 && it.lifeTime > 0) {
                 Animator.animations.add(Animation(20, { a, g ->
                     g.strokeWeight(10f)
                     g.stroke(255f)

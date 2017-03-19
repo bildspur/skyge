@@ -20,7 +20,7 @@ repositories {
 
 dependencies {
     compile "org.jetbrains.kotlin:kotlin-stdlib:$kotlin_version"
-    
+
     compile files('lib/opencv/opencv-310.jar')
 
     compile files('lib/processing/core/library/core.jar')
@@ -44,4 +44,10 @@ dependencies {
     compile files('lib/plugins/video/library/gstreamer-java.jar')
     compile files('lib/plugins/video/library/jna.jar')
     compile files('lib/plugins/video/library/video.jar')
+}
+
+task fatJar(type: Jar) {
+    baseName = project.name + '-all'
+    from { configurations.compile.collect { it.isDirectory() ? it : zipTree(it) } }
+    with jar
 }
